@@ -1,0 +1,463 @@
+/**
+ * Magento
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Academic Free License (AFL 3.0)
+ * that is bundled with this package in the file LICENSE_AFL.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://opensource.org/licenses/afl-3.0.php
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to license@magentocommerce.com so we can send you a copy immediately.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade Magento to newer
+ * versions in the future. If you wish to customize Magento for your
+ * needs please refer to http://www.magentocommerce.com for more information.
+ *
+ * @category    design
+ * @package     default_default
+ * @copyright   Copyright (c) 2014 Magento Inc. (http://www.magentocommerce.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ */
+
+/* ============================================ *
+ * Homepage
+ * ============================================ */
+
+/* -------------------------------------------- *
+ * Primary Banner
+ */
+
+body.cms-home {
+
+    .main-container {
+        padding-top: 20px;
+    }
+
+    .slideshow-container {
+        margin-top: 0;
+    }
+}
+
+.block-about {
+    width:100%;
+    height:auto;
+    min-height: 130px;
+    text-align: center;
+    margin:$gap auto $gap*2;
+    padding: $trim 30px $trim*2;
+    background: url("../images/bkg_home-main-callout-wrapper.gif") 50% 100% no-repeat;
+
+    .block-about_header {
+        padding:0;
+        border-bottom:none;
+
+        h2 {
+            font-size: 22px;
+            font-weight: 400;
+            padding: 0 10px;
+            margin-bottom: $gap;
+        }
+
+    }
+
+    .block-about_actions {
+        display: none;
+
+        button.button {
+            font-size:30px;
+            padding:20px 35px;
+        }
+
+    }
+
+    @include clearfix;
+
+}
+
+@include bp(min-width, $bp-medium + 1) {
+
+    .block-about {
+
+        .block-about_header {
+            h2 {
+                margin-bottom: $gap/2;
+            }
+
+        }
+
+    }
+
+}
+
+
+@include bp(min-width, $bp-large + 1) {
+
+    .block-about {
+        width:958px;
+        height: 130px;
+        text-align: left;
+
+        .block-about_header {
+            float: left;
+        }
+
+        .block-about_actions {
+            display: block;
+            float:right;
+        }
+
+    }
+
+}
+
+.featured-partners {
+    margin-top:$gap-xl;
+
+    h2 {
+        color: $c-text-gray;
+    }
+
+    &.col3-set .col-1,
+    &.col3-set .col-2,
+    &.col3-set .col-3 {
+        float:none;
+        width:100%;
+        padding:$trim/2;
+
+        &.item.partner {
+
+            .printer-logo {
+                width: 100%;
+                height: auto;
+                max-height: 180px;
+                background: #CCC;
+                border: 5px solid $c-module-border;
+            }
+
+        }
+
+    }
+
+}
+
+@include bp(min-width, $bp-medium + 1) {
+
+    .featured-partners {
+
+        &.col3-set .col-1,
+        &.col3-set .col-2,
+        &.col3-set .col-3 {
+            width: 33.3333%;
+            float:left;
+        }
+
+    }
+
+}
+
+.slideshow .banner-msg {
+    position: absolute;
+    text-align: center;
+    text-transform: uppercase;
+    width: 100%;
+    top: 30%;
+    @include not-selectable;
+}
+
+.slideshow .banner-msg h2 {
+    color: #FFFFFF;
+    font-size: 24px;
+    @include single-text-shadow(1px, 1px, 3px, false, #555555);
+}
+
+.slideshow .banner-msg h2 strong {
+    font-weight: bold;
+    display: block;
+    font-size: 36px;
+}
+
+@include bp(max-width, $bp-medium) {
+
+    .slideshow .banner-msg h2 {
+        font-size: 20px;
+    }
+
+    .slideshow .banner-msg h2 strong {
+        font-size: 24px;
+    }
+}
+
+@include bp(max-width, $bp-xsmall) {
+
+    .slideshow .banner-msg {
+        top: 20%;
+    }
+
+    .slideshow .banner-msg h2 {
+        font-size: 14px;
+    }
+
+    .slideshow .banner-msg h2 strong {
+        font-size: 16px;
+    }
+
+}
+
+          /* -------------------------------------------- *
+           * Promotion Banner Section
+           */
+
+.promos {
+    margin: 0 0 $gap 0;
+    padding: 0;
+    width: 100%;
+}
+
+.promos:after {
+    @include clearfix;
+}
+
+/* Specifying the body only in order to override the .std ul li styling */
+
+body .promos > li {
+    margin: 0 0 10px 0;
+    list-style: none;
+    text-align: center;
+    position: relative;
+    border: 1px solid $c-module-border;
+    @include not-selectable;
+}
+
+.promos > li:last-child {
+    margin-bottom: 0;
+}
+
+.promos img {
+    max-width: 100%;
+    width: 100%;
+}
+
+.promos a:hover {
+    @include opacity(0.8);
+    display: block;
+}
+
+.promos span {
+    color: #FFFFFF;
+    text-transform: uppercase;
+    position: absolute;
+    display: block;
+    width: 100%;
+    top: 10%;
+    font-weight: 500;
+    font-size: 20px;
+    font-family: $f-stack-special;
+    @include single-text-shadow(1px, 1px, 3px, false, #555555);
+}
+
+.promos strong {
+    font-weight: 600;
+    font-size: 26px;
+    display: block;
+}
+
+@include bp(min-width, $bp-medium + 1) {
+
+    .promos span {
+        font-size: 16px;
+    }
+
+    .promos strong {
+        font-size: 17px;
+    }
+
+    /* Config: Three columns + flexible gutter */
+    // Container: 480 - (2 * 30 trim wide) = 420
+    // Math: (420 - (2 * 10 gutter)) / 3 items = 133.333333333
+    body .promos > li {
+        float: left;
+        width: percentage(133.333333333 / 420);
+        margin-right: percentage(10 / 420);
+    }
+
+    .promos > li:nth-child(3n) {
+        margin-right: 0;
+    }
+}
+
+@include bp(min-width, 880px) {
+    .promos span {
+        font-size: 18px;
+    }
+
+    .promos strong {
+        font-size: 24px;
+    }
+}
+
+/* -------------------------------------------- *
+ * Hidden Overlay
+ */
+
+/* Overlay style */
+.overlay {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index:9999;
+  background: rgba(15,192,248,1);
+}
+
+/* Overlay closing cross */
+.overlay .overlay-close {
+  width: 80px;
+  height: 80px;
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  overflow: hidden;
+  border: none;
+  background: url("../images/cross.png") no-repeat center center;
+  text-indent: 200%;
+  color: transparent;
+  outline: none;
+  z-index: 100;
+}
+
+/* Menu style */
+.overlay div {
+  text-align: center;
+  position: relative;
+  top: 35%;
+  height: 60%;
+  -webkit-transform: translateY(-50%);
+  transform: translateY(-50%);
+}
+
+.overlay div div {
+  display: block;
+  height: 20%;
+  height: calc(100% / 5);
+  min-height: 54px;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.overlay div h3 {
+  font-size:54px;
+  color:#FFF;
+}
+.overlay div p {
+  font-size: 24px;
+  color: #fff;
+  width:65%;
+  margin:20px auto;
+  line-height: 30px;
+}
+.overlay ul {
+  width:65%;
+  margin:40px auto 20px;
+  text-align: center;
+}
+.overlay ul li {
+  display:inline-block;
+  margin:0 10px;
+}
+.overlay ul li a.button {
+  border:none;
+}
+.overlay ul li a.button span span {
+  font-size:24px;
+  padding:10px 15px;
+}
+
+.overlay ul li a:hover,
+.overlay ul li a:focus {
+  color: #f0f0f0;
+}
+
+/* Effects */
+.overlay-cornershape {
+  background: transparent;
+  visibility: hidden;
+  -webkit-transition: visibility 0s 0.5s;
+  transition: visibility 0s 0.5s;
+}
+
+.overlay-cornershape.open {
+  visibility: visible;
+  -webkit-transition: none;
+  transition: none;
+}
+
+.overlay-cornershape svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.overlay-cornershape .overlay-path {
+  fill: rgba(15,192,248,1);
+}
+
+.overlay-cornershape nav,
+.overlay-cornershape .overlay-close {
+  opacity: 0;
+  -webkit-transition: opacity 0.4s 0.4s;
+  transition: opacity 0.4s 0.4s;
+}
+
+.overlay-cornershape.open nav,
+.overlay-cornershape.open .overlay-close {
+  opacity: 1;
+  -webkit-transition-delay: 0.4s;
+  transition-delay: 0.4s;
+}
+
+.overlay-cornershape.close nav,
+.overlay-cornershape.close .overlay-close {
+  -webkit-transition-delay: 0s;
+  transition-delay: 0s;
+}
+
+@media screen and (max-height: 30.5em) {
+  .overlay nav {
+    height: 70%;
+    font-size: 34px;
+  }
+  .overlay ul li {
+    min-height: 34px;
+  }
+}
+
+
+/* -------------------------------------------- *
+ * New Products Section
+ */
+
+/* Hiding the reviews content via CSS because we can't modify the template, */
+/* since it may be used in other places where those elements are needed */
+.cms-index-index .products-grid .ratings,
+.cms-index-index .products-grid .actions,
+.cms-index-noroute .products-grid .ratings,
+.cms-index-noroute .products-grid .actions {
+    display: none;
+}
+
+.cms-index-index h2.subtitle {
+    padding: 6px 0;
+    text-align: center;
+    color: $c-text-primary;
+    font-weight: 600;
+    border-bottom: 1px solid $c-module-border;
+    border-top: 1px solid $c-module-border;
+}
+
+.cms-index-noroute h2.subtitle {
+    display: none;
+}

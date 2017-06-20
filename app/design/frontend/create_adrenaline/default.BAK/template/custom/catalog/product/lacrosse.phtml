@@ -1,0 +1,43 @@
+<?php $featured_products = $this->getLacrosseProducts(); ?>
+<div class="box popular">
+	<h3><?php echo $this->__('Popular Lacrosse Designs') ?></h3>
+	<p class="sub">High quality, professional, easy-to-use art files. Customization options available.</p>
+	<div class="product-grid catalog-listing">
+		<?php $_collectionSize = count($featured_products) ?>
+		<div class="popular-list" id="product-list-table">
+			<?php $i=0; foreach ($featured_products as $_res): ?>
+				<?php $_product = Mage::getModel('catalog/product')->load($_res['product_id']); ?>
+				<?php if ($i++%3==0): ?>
+				<ul class="products-grid">
+				<?php endif; ?>
+					<li class="item">
+						<div>
+							<?php
+							$productClass = preg_replace('/\s+/', '-', $_product->getName());
+							$productClass = strtolower($productClass);
+							?>
+							<a href="<?php echo $_product->getProductUrl() ?>" title="<?php echo $this->htmlEscape($_product->getName()) ?>" class="product-image <?php echo $productClass ?>">
+								<img src="<?php echo $this->helper('catalog/image')->init($_product, 'image')->resize(290, 290); ?>" width="290" height="290" alt="<?php echo $this->htmlEscape($_product->getName()) ?>" />
+							</a>
+						</div>
+						<div>
+							<a class="product-name" href="<?php echo $_product->getProductUrl() ?>" title="<?php echo $this->htmlEscape($_product->getName()) ?>)"><?php echo $this->htmlEscape($_product->getName()) ?></a>
+			                <div class="desc std">
+			                    <?php echo $_product->getShortDescription() ?>
+			                </div>
+							<?php echo $this->getPriceHtml($_product, true) ?>
+						</div>
+					</li>
+				<?php if ($i%3==0 && $i!=$_collectionSize): ?>
+				</ul>
+				<?php endif ?>
+			<?php endforeach ?>
+			<?php for($i;$i%3!=0;$i++): ?>
+				<li class="item empty-product">&nbsp;</li>
+			<?php endfor ?>
+			<?php if ($i%3==0): ?>
+			<?php endif ?>
+		</div>
+		<script type="text/javascript">decorateTable('product-list-table')</script>
+	</div>
+</div>

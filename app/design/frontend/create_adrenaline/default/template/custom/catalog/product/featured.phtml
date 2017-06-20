@@ -1,0 +1,35 @@
+<?php $featured_products = $this->getFeaturedProducts(); ?>
+<div class="box popular">
+	<div class="product-grid catalog-listing">
+		<?php $_collectionSize = count($featured_products) ?>
+		<div class="popular-list" id="product-list-table">
+			<ul class="products-grid products-grid--max-3-col first last odd">
+				<?php foreach ($featured_products as $_res): ?>
+					<?php $_product = Mage::getModel('catalog/product')->load($_res['product_id']); ?>
+					<li class="item">
+						<div>
+							<?php
+							$productClass = preg_replace('/\s+/', '-', $_product->getName());
+							$productClass = strtolower($productClass);
+							?>
+							<a href="<?php echo $_product->getProductUrl() ?>" title="<?php echo $this->htmlEscape($_product->getName()) ?>" class="product-image <?php echo $productClass ?>">
+								<img src="<?php echo $this->helper('catalog/image')->init($_product, 'image')->resize(700, 700); ?>" alt="<?php echo $this->htmlEscape($_product->getName()) ?>" />
+							</a>
+						</div>
+						<div>
+							<h3 class="product-name">
+								<a href="<?php echo $_product->getProductUrl() ?>" title="<?php echo $this->htmlEscape($_product->getName()) ?>)"><?php echo $this->htmlEscape($_product->getName()) ?></a>
+							</h3>
+							<?php if ($_product->getPrice() < 1) : ?>
+								<div class="price-box"><div class="price">FREE!</div></div>
+							<?php else : ?>
+								<?php echo $this->getPriceHtml($_product, true) ?>
+							<?php endif; ?>
+						</div>
+					</li>
+				<?php endforeach ?>
+			</ul>
+		</div>
+		<script type="text/javascript">decorateTable('product-list-table')</script>
+	</div>
+</div>

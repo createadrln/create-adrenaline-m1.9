@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Ryanmac_Categoryattributes>
+            <active>true</active>
+            <codePool>local</codePool>
+        </Ryanmac_Categoryattributes>
+    </modules>
+</config>
