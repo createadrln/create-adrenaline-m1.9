@@ -10,18 +10,18 @@
  * http://opensource.org/licenses/osl-3.0.php
  * If you did not receive a copy of the license and are unable to
  * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
+ * to license@magento.com so we can send you a copy immediately.
  *
  * DISCLAIMER
  *
  * Do not edit or add to this file if you wish to upgrade Magento to newer
  * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
+ * needs please refer to http://www.magento.com for more information.
  *
  * @category    Mage
  * @package     Mage_Admin
- * @copyright   Copyright (c) 2014 Magento Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @copyright  Copyright (c) 2006-2018 Magento, Inc. (http://www.magento.com)
+ * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 /**
@@ -118,7 +118,7 @@ class Mage_Admin_Model_User extends Mage_Core_Model_Abstract
             'firstname' => $this->getFirstname(),
             'lastname'  => $this->getLastname(),
             'email'     => $this->getEmail(),
-            'modified'  => now(),
+            'modified'  => $this->_getDateNow(),
             'extra'     => serialize($this->getExtra())
         );
 
@@ -131,12 +131,23 @@ class Mage_Admin_Model_User extends Mage_Core_Model_Abstract
         }
 
         if ($this->getNewPassword()) {
-            // Change password
+            // Change user password
             $data['password'] = $this->_getEncodedPassword($this->getNewPassword());
+            $data['new_password'] = $data['password'];
+            $sessionUser = $this->getSession()->getUser();
+            if ($sessionUser && $sessionUser->getId() == $this->getId()) {
+                $this->getSession()->setUserPasswordChanged(true);
+            }
         } elseif ($this->getPassword() && $this->getPassword() != $this->getOrigData('password')) {
             // New user password
             $data['password'] = $this->_getEncodedPassword($this->getPassword());
+        } elseif (!$this->getPassword() && $this->getOrigData('password') // Change user data
+            || $this->getPassword() == $this->getOrigData('password')     // Retrieve user password
+        ) {
+            $data['password'] = $this->getOrigData('password');
         }
+
+        $this->cleanPasswordsValidationData();
 
         if (!is_null($this->getIsActive())) {
             $data['is_active'] = intval($this->getIsActive());
@@ -145,6 +156,14 @@ class Mage_Admin_Model_User extends Mage_Core_Model_Abstract
         $this->addData($data);
 
         return parent::_beforeSave();
+    }
+
+    /**
+     * @return Mage_Admin_Model_Session
+     */
+    protected function getSession()
+    {
+        return  Mage::getSingleton('admin/session');
     }
 
     /**
@@ -372,7 +391,7 @@ class Mage_Admin_Model_User extends Mage_Core_Model_Abstract
     /**
      * Login user
      *
-     * @param   string $login
+     * @param   string $username
      * @param   string $password
      * @return  Mage_Admin_Model_User
      */
@@ -380,6 +399,7 @@ class Mage_Admin_Model_User extends Mage_Core_Model_Abstract
     {
         if ($this->authenticate($username, $password)) {
             $this->getResource()->recordLogin($this);
+            Mage::getSingleton('core/session')->renewFormKey();
         }
         return $this;
     }
@@ -392,8 +412,15 @@ class Mage_Admin_Model_User extends Mage_Core_Model_Abstract
     public function reload()
     {
         $id = $this->getId();
+        $oldPassword = $this->getPassword();
         $this->setId(null);
         $this->load($id);
+        $isUserPasswordChanged = $this->getSession()->getUserPasswordChanged();
+        if ($this->getPassword() !== $oldPassword && !$isUserPasswordChanged) {
+            $this->setId(null);
+        } elseif ($isUserPasswordChanged) {
+            $this->getSession()->setUserPasswordChanged(false);
+        }
         return $this;
     }
 
@@ -519,7 +546,7 @@ class Mage_Admin_Model_User extends Mage_Core_Model_Abstract
      */
     public function validate()
     {
-        $errors = array();
+        $errors = new ArrayObject();
 
         if (!Zend_Validate::is($this->getUsername(), 'NotEmpty')) {
             $errors[] = Mage::helper('adminhtml')->__('User Name is required field.');
@@ -551,16 +578,43 @@ class Mage_Admin_Model_User extends Mage_Core_Model_Abstract
             if ($this->hasPasswordConfirmation() && $this->getNewPassword() != $this->getPasswordConfirmation()) {
                 $errors[] = Mage::helper('adminhtml')->__('Password confirmation must be same as password.');
             }
+
+            Mage::dispatchEvent('admin_user_validate', array(
+                'user' => $this,
+                'errors' => $errors,
+            ));
         }
 
         if ($this->userExists()) {
             $errors[] = Mage::helper('adminhtml')->__('A user with the same user name or email aleady exists.');
         }
 
-        if (empty($errors)) {
+        if (count($errors) === 0) {
             return true;
         }
-        return $errors;
+        return (array)$errors;
+    }
+
+    /**
+     * Validate password against current user password
+     * Returns true or array of errors.
+     *
+     * @return mixed
+     */
+    public function validateCurrentPassword($password)
+    {
+        $result = array();
+
+        if (!Zend_Validate::is($password, 'NotEmpty')) {
+            $result[] = $this->_getHelper('adminhtml')->__('Current password field cannot be empty.');
+        } elseif (is_null($this->getId()) || !$this->_getHelper('core')->validateHash($password, $this->getPassword())){
+            $result[] = $this->_getHelper('adminhtml')->__('Invalid current password.');
+        }
+
+        if (empty($result)) {
+            $result = true;
+        }
+        return $result;
     }
 
     /**
@@ -606,11 +660,36 @@ class Mage_Admin_Model_User extends Mage_Core_Model_Abstract
             return true;
         }
 
-        $dayDifference = floor(($currentTimestamp - $tokenTimestamp) / (24 * 60 * 60));
-        if ($dayDifference >= $tokenExpirationPeriod) {
+        $hoursDifference = floor(($currentTimestamp - $tokenTimestamp) / (60 * 60));
+        if ($hoursDifference >= $tokenExpirationPeriod) {
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * Clean password's validation data (password, current_password, new_password, password_confirmation)
+     *
+     * @return Mage_Admin_Model_User
+     */
+    public function cleanPasswordsValidationData()
+    {
+        $this->setData('password', null);
+        $this->setData('current_password', null);
+        $this->setData('new_password', null);
+        $this->setData('password_confirmation', null);
+        return $this;
+    }
+
+    /**
+     * Simple sql format date
+     *
+     * @param string | boolean $dayOnly
+     * @return string
+     */
+    protected function _getDateNow($dayOnly = false)
+    {
+        return now($dayOnly);
     }
 }

@@ -10,18 +10,18 @@
  * http://opensource.org/licenses/osl-3.0.php
  * If you did not receive a copy of the license and are unable to
  * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
+ * to license@magento.com so we can send you a copy immediately.
  *
  * DISCLAIMER
  *
  * Do not edit or add to this file if you wish to upgrade Magento to newer
  * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
+ * needs please refer to http://www.magento.com for more information.
  *
  * @category    Mage
  * @package     Mage_Core
- * @copyright   Copyright (c) 2014 Magento Inc. (http://www.magentocommerce.com)
- * @license     http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
+ * @copyright  Copyright (c) 2006-2018 Magento, Inc. (http://www.magento.com)
+ * @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
 
 
@@ -32,6 +32,16 @@ class Mage_Core_Model_Session_Abstract_Varien extends Varien_Object
     const VALIDATOR_HTTP_X_FORVARDED_FOR_KEY    = 'http_x_forwarded_for';
     const VALIDATOR_HTTP_VIA_KEY                = 'http_via';
     const VALIDATOR_REMOTE_ADDR_KEY             = 'remote_addr';
+    const VALIDATOR_SESSION_EXPIRE_TIMESTAMP    = 'session_expire_timestamp';
+    const VALIDATOR_PASSWORD_CREATE_TIMESTAMP   = 'password_create_timestamp';
+    const SECURE_COOKIE_CHECK_KEY               = '_secure_cookie_check';
+
+    /**
+     * Map of session enabled hosts
+     * @example array('host.name' => true)
+     * @var array
+     */
+    protected $_sessionHosts = array();
 
     /**
      * Configure and start session
@@ -124,14 +134,65 @@ class Mage_Core_Model_Session_Abstract_Varien extends Varien_Object
 
         session_start();
 
+        if (Mage::app()->getFrontController()->getRequest()->isSecure() && empty($cookieParams['secure'])) {
+            // secure cookie check to prevent MITM attack
+            $secureCookieName = $sessionName . '_cid';
+            if (isset($_SESSION[self::SECURE_COOKIE_CHECK_KEY])) {
+                if ($_SESSION[self::SECURE_COOKIE_CHECK_KEY] !== md5($cookie->get($secureCookieName))) {
+                    session_regenerate_id(false);
+                    $sessionHosts = $this->getSessionHosts();
+                    $currentCookieDomain = $cookie->getDomain();
+                    foreach (array_keys($sessionHosts) as $host) {
+                        // Delete cookies with the same name for parent domains
+                        if (strpos($currentCookieDomain, $host) > 0) {
+                            $cookie->delete($this->getSessionName(), null, $host);
+                        }
+                    }
+                    $_SESSION = array();
+                } else {
+                    /**
+                     * Renew secure cookie expiration time if secure id did not change
+                     */
+                    $cookie->renew($secureCookieName, null, null, null, true, null);
+                }
+            }
+            if (!isset($_SESSION[self::SECURE_COOKIE_CHECK_KEY])) {
+                $checkId = Mage::helper('core')->getRandomString(16);
+                $cookie->set($secureCookieName, $checkId, null, null, null, true);
+                $_SESSION[self::SECURE_COOKIE_CHECK_KEY] = md5($checkId);
+            }
+        }
+
         /**
-        * Renew cookie expiration time if session id did not change
-        */
+         * Renew cookie expiration time if session id did not change
+         */
         if ($cookie->get(session_name()) == $this->getSessionId()) {
             $cookie->renew(session_name());
         }
         Varien_Profiler::stop(__METHOD__.'/start');
 
+        return $this;
+    }
+
+    /**
+     * Get session hosts
+     *
+     * @return array
+     */
+    public function getSessionHosts()
+    {
+        return $this->_sessionHosts;
+    }
+
+    /**
+     * Set session hosts
+     *
+     * @param array $hosts
+     * @return Mage_Core_Model_Session_Abstract_Varien
+     */
+    public function setSessionHosts(array $hosts)
+    {
+        $this->_sessionHosts = $hosts;
         return $this;
     }
 
@@ -324,6 +385,26 @@ class Mage_Core_Model_Session_Abstract_Varien extends Varien_Object
     }
 
     /**
+     * Use session expire timestamp in validator key
+     *
+     * @return bool
+     */
+    public function useValidateSessionExpire()
+    {
+        return $this->getCookie()->getLifetime() > 0;
+    }
+
+    /**
+     * Use password creation timestamp in validator key
+     *
+     * @return bool
+     */
+    public function useValidateSessionPasswordTimestamp()
+    {
+        return true;
+    }
+
+    /**
      * Retrieve skip User Agent validation strings (Flash etc)
      *
      * @return array
@@ -392,6 +473,23 @@ class Mage_Core_Model_Session_Abstract_Varien extends Varien_Object
             return false;
         }
 
+        if ($this->useValidateSessionExpire()
+            && isset($sessionData[self::VALIDATOR_SESSION_EXPIRE_TIMESTAMP])
+            && $sessionData[self::VALIDATOR_SESSION_EXPIRE_TIMESTAMP] < time() ) {
+            return false;
+        } else {
+            $this->_data[self::VALIDATOR_KEY][self::VALIDATOR_SESSION_EXPIRE_TIMESTAMP]
+                = $validatorData[self::VALIDATOR_SESSION_EXPIRE_TIMESTAMP];
+        }
+        if ($this->useValidateSessionPasswordTimestamp()
+            && isset($validatorData[self::VALIDATOR_PASSWORD_CREATE_TIMESTAMP])
+            && isset($sessionData[self::VALIDATOR_SESSION_EXPIRE_TIMESTAMP])
+            && $validatorData[self::VALIDATOR_PASSWORD_CREATE_TIMESTAMP]
+            > $sessionData[self::VALIDATOR_SESSION_EXPIRE_TIMESTAMP] - $this->getCookie()->getLifetime()
+        ) {
+            return false;
+        }
+
         return true;
     }
 
@@ -423,6 +521,13 @@ class Mage_Core_Model_Session_Abstract_Varien extends Varien_Object
         // collect user agent data
         if (isset($_SERVER['HTTP_USER_AGENT'])) {
             $parts[self::VALIDATOR_HTTP_USER_AGENT_KEY] = (string)$_SERVER['HTTP_USER_AGENT'];
+        }
+
+        $parts[self::VALIDATOR_SESSION_EXPIRE_TIMESTAMP] = time() + $this->getCookie()->getLifetime();
+
+        if (isset($this->_data['visitor_data']['customer_id'])) {
+            $parts[self::VALIDATOR_PASSWORD_CREATE_TIMESTAMP] =
+                Mage::helper('customer')->getPasswordTimestamp($this->_data['visitor_data']['customer_id']);
         }
 
         return $parts;

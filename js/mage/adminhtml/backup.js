@@ -9,17 +9,17 @@
  * http://opensource.org/licenses/afl-3.0.php
  * If you did not receive a copy of the license and are unable to
  * obtain it through the world-wide-web, please send an email
- * to license@magentocommerce.com so we can send you a copy immediately.
+ * to license@magento.com so we can send you a copy immediately.
  *
  * DISCLAIMER
  *
  * Do not edit or add to this file if you wish to upgrade Magento to newer
  * versions in the future. If you wish to customize Magento for your
- * needs please refer to http://www.magentocommerce.com for more information.
+ * needs please refer to http://www.magento.com for more information.
  *
  * @category    Mage
  * @package     Mage_Adminhtml
- * @copyright   Copyright (c) 2014 Magento Inc. (http://www.magentocommerce.com)
+ * @copyright   Copyright (c) 2006-2018 Magento, Inc. (http://www.magento.com)
  * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  */
 var AdminBackup = new Class.create();
@@ -97,7 +97,8 @@ AdminBackup.prototype = {
 
         $$('#ftp-credentials-container input').each(function(item) {
             if (item.name == 'ftp_path') return;
-            $('use_ftp').checked ? item.addClassName('required-entry') : item.removeClassName('required-entry');
+            $('use_ftp').checked && item.name != 'dummy' ?
+                item.addClassName('required-entry') : item.removeClassName('required-entry');
         });
 
         $(divId).show().setStyle({
@@ -189,4 +190,4 @@ AdminBackup.prototype = {
         $$('.backup-dialog').each(Element.hide);
         $('popup-window-mask').hide();
     }
-}
+};
